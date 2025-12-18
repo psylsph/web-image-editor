@@ -4,6 +4,7 @@
   "description": "",
   "main": "script.js",
   "scripts": {
+    "build": "mkdir -p vendor/imgly-data onnxruntime-web models && cp resources.json vendor/imgly-data/ && cp -r node_modules/onnxruntime-web/dist/* onnxruntime-web/ && cp node_modules/@imgly/background-removal-data/dist/resources.json models/ && cp node_modules/@imgly/background-removal-data/dist/[0-9a-f]* models/",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report"
