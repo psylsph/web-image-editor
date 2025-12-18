@@ -6,10 +6,10 @@ package-lock.json
 .env
 .env.local
 
-# AI/ML models and runtime
-models/
-onnxruntime-web/
-vendor
+# AI/ML models and runtime (needed for deployment)
+# models/ - keep for deployment
+# onnxruntime-web/ - keep for deployment
+# vendor/ - keep for deployment
 
 # Test artifacts
 test-results/
