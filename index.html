@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blur & Grain Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Blur & Grain</h1>
+            <p>Upload an image to blur the background and add film grain.</p>
+        </header>
+
+        <main>
+            <div class="editor-layout">
+                <div class="canvas-container" id="drop-zone">
+                    <div class="placeholder-content" id="upload-placeholder">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Drag & drop or click to upload</p>
+                        <input type="file" id="file-input" accept="image/png, image/jpeg, image/webp" hidden>
+                    </div>
+                    <canvas id="main-canvas"></canvas>
+                    <div class="loading-overlay" id="loading-overlay" hidden>
+                        <div class="spinner"></div>
+                        <p>Processing background...</p>
+                    </div>
+                </div>
+
+                <aside class="controls-panel">
+                    <div class="control-group">
+                        <label for="blur-amount">Background Blur</label>
+                        <input type="range" id="blur-amount" min="0" max="10" value="0" disabled>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="grain-amount">Film Grain</label>
+                        <input type="range" id="grain-amount" min="0" max="50" value="0" disabled>
+                    </div>
+
+                    <div class="actions">
+                        <button id="download-btn" class="btn primary" disabled>Download Image</button>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+    <script src="script.js" type="module"></script>
+</body>
+
+</html>
