@@ -1,6 +1,12 @@
 [build]
   functions = "functions"
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"

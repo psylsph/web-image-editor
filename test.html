@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IMG Test</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "@imgly/background-removal": "./vendor/imgly.js",
+                "onnxruntime-web": "./node_modules/onnxruntime-web/dist/ort.mjs",
+                "onnxruntime-web/webgpu": "./node_modules/onnxruntime-web/dist/ort.webgpu.mjs"
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>IMG Background Removal Test</h1>
+    <button id="test-btn">Run Test</button>
+    <div id="output"></div>
+    
+    <script type="module">
+        import { removeBackground } from "@imgly/background-removal";
+        
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Running test...';
+            
+            try {
+                // Create test image
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, 100, 100);
+                
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const config = {
+                            publicPath: window.location.origin + "/",
+                            model: "isnet_fp16"
+                        };
+                        
+                        output.innerHTML = 'Removing background...';
+                        const result = await removeBackground(blob, config);
+                        
+                        // Display result
+                        const img = document.createElement('img');
+                        img.src = URL.createObjectURL(result);
+                        output.innerHTML = '<h3>Success!</h3>';
+                        output.appendChild(img);
+                        
+                    } catch (error) {
+                        output.innerHTML = `<h3>Error:</h3><pre>${error.message}</pre>`;
+                        console.error('Full error:', error);
+                    }
+                });
+            } catch (error) {
+                output.innerHTML = `<h3>Setup Error:</h3><pre>${error.message}</pre>`;
+            }
+        });
+    </script>
+</body>
+</html>
