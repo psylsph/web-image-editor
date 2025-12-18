@@ -193,9 +193,7 @@ function resizeImageForUpload(img, maxDimension) {
     });
 }
 
-// Offscreen canvases for performance/compositing
-const offscreenCanvas = document.createElement('canvas');
-const offCtx = offscreenCanvas.getContext('2d');
+
 
 function render() {
     if (!originalImage || !ctx) return;
@@ -210,37 +208,11 @@ function render() {
 
     // 1. Draw Background (Blurred Original)
     if (maskImage && blurAmount > 0) {
-        // Advanced Blur: Pad and Clamp edges to avoid transparency
-        const pad = Math.min(blurAmount * 3, 100);
-
-        // Resize offscreen canvas to be padded
-        if (offscreenCanvas.width !== w + (pad * 2) || offscreenCanvas.height !== h + (pad * 2)) {
-            offscreenCanvas.width = w + (pad * 2);
-            offscreenCanvas.height = h + (pad * 2);
-        }
-
-        // Draw Image in Center
-        offCtx.drawImage(originalImage, pad, pad, w, h);
-
-        // Clamp Edges (Simple stretch for now or mirror. Let's stick to the previous implementation logic)
-        // ... (Simpler approach: Draw image, set filter, draw again? No, edge bleeding issues).
-
-        // Simpler approach for now:
-        // Draw the image. Blur it. Then draw the Cutout on top.
-        // Problem with standard canvas blur is edges fade to transparent. 
-        // Fix: Draw the generic image, blur it.
-
+        // Create blurred background effect
         ctx.save();
         ctx.filter = `blur(${blurAmount}px)`;
-        // To avoid white edges, we can draw the image scaled up slightly or just accept it for now.
-        // Better: Draw the image 9 tiles to fill edges?
-        // Let's stick to simple blur for immediate feedback, user wants it working first.
-
-        // Draw slightly larger to cover edges?
-        const s = blurAmount * 2;
-        ctx.drawImage(originalImage, -s, -s, w + (2 * s), h + (2 * s));
+        ctx.drawImage(originalImage, 0, 0, w, h);
         ctx.restore();
-
     } else {
         ctx.drawImage(originalImage, 0, 0, w, h);
     }
