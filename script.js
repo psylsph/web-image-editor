@@ -104,8 +104,13 @@ async function removeBackground(file) {
     isProcessing = true;
     setLoading(true);
     try {
+        // Optimization: Resize image before upload to avoid timeouts/payload limits on mobile
+        const resizeLimit = 2048; // Max dimension
+        const resizedBlob = await resizeImageForUpload(originalImage, resizeLimit);
+
         const formData = new FormData();
-        formData.append('image', file);
+        // Send the blob, using the original filename (or a default)
+        formData.append('image', resizedBlob, file.name);
         // We request the FULL image with background removed (cutout), not just the mask.
         // This makes compositing much easier: Layer 1 = Blurred Original, Layer 2 = Transparent Cutout.
         formData.append('mask', 'false');
@@ -133,6 +138,34 @@ async function removeBackground(file) {
         isProcessing = false;
         setLoading(false);
     }
+}
+
+function resizeImageForUpload(img, maxDimension) {
+    return new Promise((resolve) => {
+        let w = img.width;
+        let h = img.height;
+
+        if (w > maxDimension || h > maxDimension) {
+            if (w > h) {
+                h = Math.round((h * maxDimension) / w);
+                w = maxDimension;
+            } else {
+                w = Math.round((w * maxDimension) / h);
+                h = maxDimension;
+            }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Convert to blob (JPEG 80% quality is usually good enough for mask generation)
+        canvas.toBlob((blob) => {
+            resolve(blob);
+        }, 'image/jpeg', 0.8);
+    });
 }
 
 // Offscreen canvases for performance/compositing
