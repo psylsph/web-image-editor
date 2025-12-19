@@ -9,15 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script type="importmap">
-        {
-            "imports": {
-                "@imgly/background-removal": "./vendor/imgly.js",
-                "onnxruntime-web": "./node_modules/onnxruntime-web/dist/ort.mjs",
-                "onnxruntime-web/webgpu": "./node_modules/onnxruntime-web/dist/ort.webgpu.mjs"
-            }
-        }
-    </script>
+    <!-- TensorFlow.js and BodyPix for background removal -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
 </head>
 
 <body>
@@ -65,8 +59,7 @@
             </div>
         </main>
     </div>
-    <script src="script.js" type="module"></script>
-    <script src="test-imgly.js" type="module"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>

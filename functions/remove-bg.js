@@ -46,7 +46,7 @@ exports.handler = async function (event, context) {
 
                 const imageFile = files[0];
                 const formData = new FormData();
-                formData.append('image', imageFile.content, imageFile.filename.filename);
+                formData.append('image', imageFile.content, imageFile.filename);
 
                 // Add optional parameters if present in fields
                 // RemBG API supports 'mask' parameter.

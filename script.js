@@ -1,4 +1,4 @@
- import { removeBackground, preload } from "@imgly/background-removal";
+// BodyPix loaded via CDN in index.html
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -19,32 +19,29 @@ let fileName = 'image.png';
 // Constants
 const MAX_IMAGE_WIDTH = 1920;
 
- let isProcessing = false;
- let currentFile = null;
- let isPreloaded = false;
+let isProcessing = false;
+let currentFile = null;
+let bodyPixNet = null; // BodyPix model instance
 
 // Initial Setup
 function init() {
     setupEventListeners();
-    preloadAssets();
+    // Preload BodyPix model in background
+    loadBodyPix();
 }
 
-async function preloadAssets() {
-    const config = {
-        publicPath: window.location.origin + "/",
-        model: "isnet_fp16",
-        progress: (key, current, total) => {
-            console.log(`Downloading ${key}: ${current} of ${total}`);
-        }
-    };
+async function loadBodyPix() {
+    if (bodyPixNet) return bodyPixNet;
 
-    // Fire and forget - don't block UI
-    preload(config).then(() => {
-        isPreloaded = true;
-        console.log("Asset preloading succeeded");
-    }).catch((error) => {
-        console.error("Asset preloading failed:", error);
-    });
+    try {
+        console.log('Loading BodyPix model...');
+        bodyPixNet = await bodyPix.load();
+        console.log('BodyPix model loaded successfully');
+        return bodyPixNet;
+    } catch (error) {
+        console.error('Failed to load BodyPix:', error);
+        throw error;
+    }
 }
 
 function setupEventListeners() {
@@ -74,8 +71,8 @@ function setupEventListeners() {
 
         // Trigger Background Removal if needed
         // If we haven't processed the background yet, do it now.
-        if (parseInt(blurInput.value, 10) > 0 && !maskImage && !isProcessing && currentFile) {
-            processBackground(currentFile);
+        if (parseInt(blurInput.value, 10) > 0 && !maskImage && !isProcessing && originalImage) {
+            processBackground();
         }
     });
 
@@ -124,35 +121,78 @@ async function handleFile(file) {
     img.src = URL.createObjectURL(file);
 }
 
-async function processBackground(file) {
+async function processBackground() {
     if (isProcessing) return;
     isProcessing = true;
     setLoading(true);
 
-    // Update loading text to indicate first-time download might be slow
     const loadingText = loadingOverlay.querySelector('p');
     const originalText = loadingText.textContent;
-    loadingText.textContent = "Loading AI models & processing... (First time may take a moment)";
+    loadingText.textContent = "Removing background...";
 
     try {
-        // imgly removeBackground returns a Blob (PNG) of the cutout
-        const config = {
-            publicPath: window.location.origin + "/",
-            model: "isnet_fp16"  // Explicitly specify the model to avoid undefined references
-        };
-        const blob = await removeBackground(file);
+        console.log('Starting background removal...');
+        console.log('Original image:', originalImage);
+        console.log('Canvas dimensions:', mainCanvas.width, 'x', mainCanvas.height);
 
+        // Load BodyPix model
+        const net = await loadBodyPix();
+        console.log('BodyPix model loaded, starting segmentation...');
+
+        // Segment person from the image
+        const segmentation = await net.segmentPerson(originalImage, {
+            flipHorizontal: false,
+            internalResolution: 'medium',
+            segmentationThreshold: 0.7
+        });
+        console.log('Segmentation complete:', segmentation);
+
+        // Check if any person was detected
+        const personDetected = segmentation.data.some(val => val > 0);
+        console.log('Person detected:', personDetected);
+
+        if (!personDetected) {
+            console.warn('No person detected in image. Background removal may not work as expected.');
+        }
+
+        // Create mask canvas
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = mainCanvas.width;
+        maskCanvas.height = mainCanvas.height;
+        const maskCtx = maskCanvas.getContext('2d');
+
+        // Draw the person mask (INVERTED - we want background, not person)
+        // backgroundBlurAmount > 0 blurs background, 0 blurs person
+        const mask = bodyPix.toMask(segmentation, { r: 0, g: 0, b: 0, a: 255 }, { r: 0, g: 0, b: 0, a: 0 });
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = originalImage.width;
+        tempCanvas.height = originalImage.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.putImageData(mask, 0, 0);
+
+        // Composite: draw original image, then apply mask to show only person (cut out person)
+        maskCtx.drawImage(originalImage, 0, 0, mainCanvas.width, mainCanvas.height);
+        maskCtx.globalCompositeOperation = 'destination-in';
+        maskCtx.drawImage(tempCanvas, 0, 0, mainCanvas.width, mainCanvas.height);
+        maskCtx.globalCompositeOperation = 'source-over';
+
+        // Convert mask canvas to image for reuse in render()
         maskImage = new Image();
         maskImage.onload = () => {
             isProcessing = false;
             setLoading(false);
-            loadingText.textContent = originalText; // Reset text
+            loadingText.textContent = originalText;
+
+            if (!personDetected) {
+                alert('No person detected in the image. The background blur may not work as expected. Try an image with a person in it.');
+            }
+
             render();
         };
-        maskImage.src = URL.createObjectURL(blob);
+        maskImage.src = maskCanvas.toDataURL();
 
     } catch (error) {
-        console.error(error);
+        console.error('Background removal failed:', error);
         alert('Failed to process background. Please try again.');
         isProcessing = false;
         setLoading(false);
@@ -206,20 +246,18 @@ function render() {
 
     const blurAmount = parseInt(blurInput.value, 10);
 
-    // 1. Draw Background (Blurred Original)
     if (maskImage && blurAmount > 0) {
-        // Create blurred background effect
+        // Step 1: Draw blurred original (entire image)
         ctx.save();
         ctx.filter = `blur(${blurAmount}px)`;
         ctx.drawImage(originalImage, 0, 0, w, h);
         ctx.restore();
-    } else {
-        ctx.drawImage(originalImage, 0, 0, w, h);
-    }
 
-    // 2. Draw Foreground (The Cutout)
-    if (maskImage) {
+        // Step 2: Draw sharp person on top (maskImage is ONLY the person)
         ctx.drawImage(maskImage, 0, 0, w, h);
+    } else {
+        // No blur or no mask - draw original
+        ctx.drawImage(originalImage, 0, 0, w, h);
     }
 
     // 3. Draw Grain
