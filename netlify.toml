@@ -1,30 +1,5 @@
+# Netlify configuration for static BodyPix app
 [build]
-  command = "npm run build"
-  functions = "functions"
+  publish = "."
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Embedder-Policy = "require-corp"
-
-[[headers]]
-  for = "/models/*"
-  [headers.values]
-    Content-Type = "application/octet-stream"
-
-[[headers]]
-  for = "/onnxruntime-web/*.wasm"
-  [headers.values]
-    Content-Type = "application/wasm"
-
-[[headers]]
-  for = "/onnxruntime-web/*.mjs"
-  [headers.values]
-    Content-Type = "application/javascript"
-    Cache-Control = "public, max-age=31536000"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# No build command or functions needed - pure static HTML/CSS/JS with CDN dependencies
