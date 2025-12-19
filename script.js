@@ -131,13 +131,8 @@ async function processBackground() {
     loadingText.textContent = "Removing background...";
 
     try {
-        console.log('Starting background removal...');
-        console.log('Original image:', originalImage);
-        console.log('Canvas dimensions:', mainCanvas.width, 'x', mainCanvas.height);
-
         // Load BodyPix model
         const net = await loadBodyPix();
-        console.log('BodyPix model loaded, starting segmentation...');
 
         // Segment person from the image
         const segmentation = await net.segmentPerson(originalImage, {
@@ -145,15 +140,9 @@ async function processBackground() {
             internalResolution: 'medium',
             segmentationThreshold: 0.7
         });
-        console.log('Segmentation complete:', segmentation);
 
         // Check if any person was detected
         const personDetected = segmentation.data.some(val => val > 0);
-        console.log('Person detected:', personDetected);
-
-        if (!personDetected) {
-            console.warn('No person detected in image. Background removal may not work as expected.');
-        }
 
         // Create mask canvas
         const maskCanvas = document.createElement('canvas');
@@ -198,39 +187,6 @@ async function processBackground() {
         setLoading(false);
         loadingText.textContent = originalText;
     }
-}
-
-function resizeImageForUpload(img, maxDimension) {
-    // Kept for utility, though imgly handles large images well. 
-    // We might not need to resize strictly for imgly, but it speeds up processing.
-    // However, imgly takes the blob/file directly. 
-    // Let's rely on imgly's internal resizing/handling for now.
-    // Use this if we need to optimize later.
-    return new Promise((resolve) => {
-        let w = img.width;
-        let h = img.height;
-
-        if (w > maxDimension || h > maxDimension) {
-            if (w > h) {
-                h = Math.round((h * maxDimension) / w);
-                w = maxDimension;
-            } else {
-                w = Math.round((w * maxDimension) / h);
-                h = maxDimension;
-            }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-
-        // Convert to blob (JPEG 80% quality is usually good enough for mask generation)
-        canvas.toBlob((blob) => {
-            resolve(blob);
-        }, 'image/jpeg', 0.8);
-    });
 }
 
 
